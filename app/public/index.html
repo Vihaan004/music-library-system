@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Melodex — Music Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+/* ───────── RESET & TOKENS ───────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0c;
+  --surface:  #111115;
+  --card:     #18181e;
+  --border:   #2a2a35;
+  --accent:   #e8c84a;
+  --accent2:  #7b5ea7;
+  --text:     #e8e8f0;
+  --muted:    #7a7a90;
+  --danger:   #e85a4a;
+  --success:  #4ae88a;
+  --radius:   10px;
+  --font:     'Syne', sans-serif;
+  --mono:     'DM Mono', monospace;
+  --trans:    0.18s ease;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ───────── LAYOUT ───────── */
+.shell { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0 20px;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 50;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  padding: 0 24px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.logo span { color: var(--accent); }
+
+.nav { margin-top: 20px; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  border-left: 3px solid transparent;
+  transition: color var(--trans), border-color var(--trans), background var(--trans);
+  user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(232,200,74,0.05); }
+.nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+.sidebar-user {
+  padding: 16px 24px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.sidebar-user select {
+  width: 100%;
+  margin-top: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  padding: 7px 10px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* MAIN */
+.main {
+  margin-left: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* TOPBAR */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(10,10,12,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 36px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.topbar h1 { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; flex: 1; }
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+.search-wrap input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 9px 16px 9px 38px;
+  outline: none;
+  transition: border-color var(--trans);
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+select.filter {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  padding: 9px 14px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--trans);
+}
+select.filter:focus { border-color: var(--accent); }
+
+/* CONTENT */
+.content { padding: 32px 36px; flex: 1; }
+
+/* SECTIONS */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ───────── COMPONENTS ───────── */
+
+/* BUTTON */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font);
+  font-size: 0.83rem;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: opacity var(--trans), transform var(--trans), background var(--trans);
+  outline: none;
+  white-space: nowrap;
+}
+.btn:hover { opacity: 0.86; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: var(--accent); color: #0a0a0c; }
+.btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--text); }
+.btn-danger  { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-sm { font-size: 0.75rem; padding: 5px 12px; }
+
+/* CARD */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* SONG GRID */
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.song-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color var(--trans), transform var(--trans);
+  position: relative;
+  overflow: hidden;
+}
+.song-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity var(--trans);
+}
+.song-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.song-card:hover::before { opacity: 1; }
+
+.song-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-artist {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.tag {
+  font-size: 0.7rem;
+  font-family: var(--mono);
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  padding: 2px 7px;
+  color: var(--muted);
+}
+.tag.accent { background: rgba(232,200,74,0.12); color: var(--accent); }
+.tag.purple { background: rgba(123,94,167,0.18); color: #b89fe0; }
+.popularity-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 99px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.popularity-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+.song-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+/* PLAYLIST LIST */
+.playlist-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.playlist-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color var(--trans);
+  cursor: pointer;
+}
+.playlist-row:hover { border-color: var(--accent); }
+.playlist-row.selected { border-color: var(--accent); background: rgba(232,200,74,0.04); }
+.playlist-icon {
+  font-size: 1.4rem;
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.playlist-info { flex: 1; min-width: 0; }
+.playlist-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.playlist-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.playlist-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* TABLE */
+.table-wrap { margin-top: 20px; overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead tr { border-bottom: 1px solid var(--border); background: var(--surface); }
+th { text-align: left; padding: 12px 16px; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+td { padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,0.02); }
+.td-title { max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.td-artist { max-width: 160px; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--trans);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  transform: translateY(16px);
+  transition: transform var(--trans);
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 20px; }
+
+/* FORM */
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color var(--trans);
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: 30px; right: 30px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 999;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.25s ease;
+  max-width: 320px;
+  pointer-events: none;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { border-color: var(--success); color: var(--success); }
+#toast.error   { border-color: var(--danger);  color: var(--danger);  }
+
+/* STATS ROW */
+.stats-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 24px;
+  flex: 1; min-width: 140px;
+}
+.stat-value { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+
+/* SECTION HEADER */
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.section-header h2 { font-size: 1.05rem; font-weight: 800; flex: 1; }
+
+/* EMPTY STATE */
+.empty {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.empty-icon { font-size: 2.4rem; margin-bottom: 12px; }
+.empty p { font-size: 0.88rem; }
+
+/* USERS TABLE */
+.users-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.user-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.user-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem; color: #0a0a0c;
+  flex-shrink: 0;
+}
+.user-info { flex: 1; }
+.user-name { font-weight: 700; font-size: 0.92rem; }
+.user-email { font-size: 0.75rem; color: var(--muted); }
+
+/* PLAYLIST SONG TABLE inside playlists view */
+#pl-songs-panel {
+  margin-top: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: none;
+}
+#pl-songs-panel.open { display: block; }
+.panel-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-header h3 { flex: 1; font-size: 0.95rem; font-weight: 800; }
+
+/* LOAD MORE */
+.load-more-wrap { text-align: center; margin-top: 20px; }
+
+/* ms → m:ss */
+/* handled in JS */
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MODAL: Create user -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <h2>➕ New User</h2>
+    <div class="form-group"><label>Username</label><input id="inp-username" placeholder="e.g. alex" /></div>
+    <div class="form-group"><label>Email</label><input id="inp-email" type="email" placeholder="alex@example.com" /></div>
+    <div class="form-group"><label>Password</label><input id="inp-password" type="password" placeholder="••••••••" /></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Create playlist -->
+<div class="modal-overlay" id="modal-playlist">
+  <div class="modal">
+    <h2>🎵 New Playlist</h2>
+    <div class="form-group"><label>Playlist Name</label><input id="inp-pl-name" placeholder="e.g. Late Night Drive" /></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-playlist')">Cancel</button>
+      <button class="btn btn-primary" onclick="createPlaylist()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Rename playlist -->
+<div class="modal-overlay" id="modal-rename">
+  <div class="modal">
+    <h2>✏️ Rename Playlist</h2>
+    <div class="form-group"><label>New Name</label><input id="inp-rename" placeholder="Enter new name" /></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-rename')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRename()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add song to playlist -->
+<div class="modal-overlay" id="modal-add-song">
+  <div class="modal">
+    <h2>🎶 Add to Playlist</h2>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;" id="modal-song-label">Adding song</p>
+    <div class="form-group">
+      <label>Select Playlist</label>
+      <select id="modal-pl-select"><option value="">— choose —</option></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-song')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddSong()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">Melo<span>dex</span></div>
+    <div class="nav">
+      <div class="nav-item active" onclick="showSection('songs')">
+        <span class="nav-icon">🎵</span> Browse Songs
+      </div>
+      <div class="nav-item" onclick="showSection('playlists')">
+        <span class="nav-icon">📋</span> Playlists
+      </div>
+      <div class="nav-item" onclick="showSection('users')">
+        <span class="nav-icon">👤</span> Users
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div>Active user</div>
+      <select id="user-switcher" onchange="switchUser(this.value)">
+        <option value="">Loading…</option>
+      </select>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar" id="topbar-songs">
+      <h1>Browse Songs</h1>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="song-search" placeholder="Search title or artist…" oninput="debounceSearch()" />
+      </div>
+      <select class="filter" id="genre-filter" onchange="loadSongs(true)">
+        <option value="">All Genres</option>
+      </select>
+    </div>
+
+    <div class="topbar" id="topbar-playlists" style="display:none;">
+      <h1>Playlists</h1>
+      <button class="btn btn-primary" onclick="openModal('modal-playlist')" id="btn-new-pl">+ New Playlist</button>
+    </div>
+
+    <div class="topbar" id="topbar-users" style="display:none;">
+      <h1>Users</h1>
+      <button class="btn btn-primary" onclick="openModal('modal-user')">+ Add User</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ── SONGS SECTION ── -->
+      <div class="section active" id="section-songs">
+        <div class="stats-row" id="stats-row">
+          <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Songs</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-genres">—</div><div class="stat-label">Genres</div></div>
+          <div class="stat-card"><div class="stat-value" id="stat-playlists">—</div><div class="stat-label">Playlists</div></div>
+        </div>
+        <div class="song-grid" id="song-grid"></div>
+        <div class="load-more-wrap">
+          <button class="btn btn-ghost" id="btn-load-more" onclick="loadSongs(false)" style="display:none;">Load more</button>
+        </div>
+      </div>
+
+      <!-- ── PLAYLISTS SECTION ── -->
+      <div class="section" id="section-playlists">
+        <div id="no-user-msg" style="display:none;" class="empty">
+          <div class="empty-icon">👤</div>
+          <p>Select an active user in the sidebar to view playlists.</p>
+        </div>
+        <div id="pl-list-wrap">
+          <div class="playlist-list" id="playlist-list"></div>
+          <div id="pl-songs-panel">
+            <div class="panel-header">
+              <h3 id="pl-panel-title">Playlist songs</h3>
+              <button class="btn btn-ghost btn-sm" onclick="openAddSongModal()">+ Add Song</button>
+              <button class="btn btn-ghost btn-sm" onclick="closeSongsPanel()">✕ Close</button>
+            </div>
+            <div class="table-wrap" style="border:none;border-radius:0;margin-top:0;">
+              <table>
+                <thead><tr><th>#</th><th>Title</th><th>Artist</th><th>Album</th><th>Genre</th><th>Pop</th><th>Duration</th><th></th></tr></thead>
+                <tbody id="pl-songs-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── USERS SECTION ── -->
+      <div class="section" id="section-users">
+        <div class="users-grid" id="users-grid"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+// ────────────────────────────────────────────────
+//  STATE
+// ────────────────────────────────────────────────
+const API = '';          // same origin
+let currentUser   = null;
+let activeSection = 'songs';
+let songOffset    = 0;
+let songLimit     = 20;
+let allSongsLoaded = false;
+let activePl      = null;   // { playlist_id, name }
+let pendingSongId  = null;   // for add-song modal
+let renameTarget  = null;    // { playlist_id }
+let searchTimer   = null;
+
+// ────────────────────────────────────────────────
+//  UTIL
+// ────────────────────────────────────────────────
+function ms(ms) {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+let toastTimer = null;
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3000);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ────────────────────────────────────────────────
+//  NAVIGATION
+// ────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`section-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(name === 'songs' ? 'browse' : name))
+      n.classList.add('active');
+  });
+
+  // topbars
+  ['songs','playlists','users'].forEach(s => {
+    document.getElementById(`topbar-${s}`).style.display = s === name ? '' : 'none';
+  });
+
+  activeSection = name;
+  if (name === 'playlists') loadPlaylists();
+  if (name === 'users')     loadUsers();
+}
+
+// ────────────────────────────────────────────────
+//  USER SWITCHER
+// ────────────────────────────────────────────────
+async function loadUserSwitcher() {
+  const users = await api('GET', '/api/users');
+  const sel = document.getElementById('user-switcher');
+  sel.innerHTML = '<option value="">— select user —</option>'
+    + users.map(u => `<option value="${u.user_id}">${u.username}</option>`).join('');
+  if (users.length) {
+    sel.value = users[0].user_id;
+    switchUser(users[0].user_id, users[0]);
+  }
+  // stats
+  document.getElementById('stat-genres').textContent = (await api('GET','/api/genres')).length;
+}
+
+function switchUser(userId, userObj) {
+  currentUser = userId ? { user_id: userId } : null;
+  if (activeSection === 'playlists') loadPlaylists();
+}
+
+// ────────────────────────────────────────────────
+//  SONGS
+// ────────────────────────────────────────────────
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadSongs(true), 300);
+}
+
+async function loadSongs(reset = true) {
+  if (reset) { songOffset = 0; allSongsLoaded = false; document.getElementById('song-grid').innerHTML = ''; }
+  const search = document.getElementById('song-search').value.trim();
+  const genre  = document.getElementById('genre-filter').value;
+  const params = new URLSearchParams({ search, genre, limit: songLimit, offset: songOffset });
+  const songs  = await api('GET', `/api/songs?${params}`);
+
+  renderSongs(songs, !reset);
+
+  if (songs.length < songLimit) {
+    allSongsLoaded = true;
+    document.getElementById('btn-load-more').style.display = 'none';
+  } else {
+    document.getElementById('btn-load-more').style.display = 'inline-flex';
+    songOffset += songs.length;
+  }
+  // total count approximation for stats
+  if (reset && !genre && !search)
+    document.getElementById('stat-total').textContent = songs.length >= songLimit ? songLimit + '+' : songs.length;
+}
+
+function renderSongs(songs, append = false) {
+  const grid = document.getElementById('song-grid');
+  if (!append) grid.innerHTML = '';
+  if (!songs.length && !append) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🎵</div><p>No songs found.</p></div>`;
+    return;
+  }
+  songs.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'song-card';
+    card.innerHTML = `
+      <div class="song-title" title="${esc(s.title)}">${esc(s.title)}</div>
+      <div class="song-artist">${esc(s.artists || 'Unknown')}</div>
+      <div class="song-meta">
+        <span class="tag accent">${esc(s.genre)}</span>
+        <span class="tag">${ms(s.duration_ms)}</span>
+        ${s.explicit ? '<span class="tag" style="color:var(--danger)">E</span>' : ''}
+        <span class="tag purple">⚡ ${Math.round(s.energy*100)}%</span>
+        <span class="tag">💃 ${Math.round(s.danceability*100)}%</span>
+      </div>
+      <div class="popularity-bar"><div class="popularity-fill" style="width:${s.popularity}%"></div></div>
+      <div class="song-actions">
+        <button class="btn btn-ghost btn-sm" onclick='openAddSongModalFor(${JSON.stringify({id:s.song_id,title:s.title})})'>+ Playlist</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+async function loadGenres() {
+  const genres = await api('GET', '/api/genres');
+  const sel = document.getElementById('genre-filter');
+  genres.forEach(g => {
+    const o = document.createElement('option');
+    o.value = g; o.textContent = cap(g);
+    sel.appendChild(o);
+  });
+}
+
+// ────────────────────────────────────────────────
+//  PLAYLISTS
+// ────────────────────────────────────────────────
+async function loadPlaylists() {
+  closeSongsPanel();
+  const noMsg = document.getElementById('no-user-msg');
+  const wrap   = document.getElementById('pl-list-wrap');
+
+  if (!currentUser) {
+    noMsg.style.display = '';
+    wrap.style.display  = 'none';
+    return;
+  }
+  noMsg.style.display = 'none';
+  wrap.style.display  = '';
+
+  const pls = await api('GET', `/api/users/${currentUser.user_id}/playlists`);
+  document.getElementById('stat-playlists').textContent = pls.length;
+
+  const list = document.getElementById('playlist-list');
+  if (!pls.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>No playlists yet. Create one!</p></div>`;
+    return;
+  }
+  list.innerHTML = pls.map(p => `
+    <div class="playlist-row${activePl?.playlist_id == p.playlist_id ? ' selected':''}" id="plrow-${p.playlist_id}" onclick="selectPlaylist(${p.playlist_id},${JSON.stringify(p.name)})">
+      <div class="playlist-icon">🎵</div>
+      <div class="playlist-info">
+        <div class="playlist-name">${esc(p.name)}</div>
+        <div class="playlist-sub">${p.song_count} song${p.song_count!==1?'s':''}</div>
+      </div>
+      <div class="playlist-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="openRename(${p.playlist_id},${JSON.stringify(p.name)})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePlaylist(${p.playlist_id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectPlaylist(id, name) {
+  activePl = { playlist_id: id, name };
+  document.querySelectorAll('.playlist-row').forEach(r => r.classList.remove('selected'));
+  const row = document.getElementById(`plrow-${id}`);
+  if (row) row.classList.add('selected');
+  loadPlaylistSongs(id, name);
+}
+
+async function loadPlaylistSongs(id, name) {
+  document.getElementById('pl-panel-title').textContent = name;
+  document.getElementById('pl-songs-panel').classList.add('open');
+  const songs = await api('GET', `/api/playlists/${id}/songs`);
+  const tbody = document.getElementById('pl-songs-body');
+  if (!songs.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty" style="text-align:center;padding:30px;color:var(--muted)">No songs yet. Add some!</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = songs.map((s, i) => `
+    <tr>
+      <td style="color:var(--muted);font-family:var(--mono);font-size:0.75rem">${i+1}</td>
+      <td class="td-title" title="${esc(s.title)}">${esc(s.title)}</td>
+      <td class="td-artist">${esc(s.artists||'')}</td>
+      <td style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis">${esc(s.album||'')}</td>
+      <td><span class="tag accent" style="font-size:0.68rem">${esc(s.genre)}</span></td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${s.popularity}</td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${ms(s.duration_ms)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeSongFromPlaylist(${id},${s.song_id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function closeSongsPanel() {
+  activePl = null;
+  document.getElementById('pl-songs-panel').classList.remove('open');
+  document.querySelectorAll('.playlist-row').forEach(r => r.classList.remove('selected'));
+}
+
+async function createPlaylist() {
+  if (!currentUser) return toast('Select a user first', 'error');
+  const name = document.getElementById('inp-pl-name').value.trim();
+  if (!name) return toast('Enter a playlist name', 'error');
+  try {
+    await api('POST', '/api/playlists', { userId: currentUser.user_id, name });
+    toast(`Playlist "${name}" created!`);
+    document.getElementById('inp-pl-name').value = '';
+    closeModal('modal-playlist');
+    loadPlaylists();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openRename(id, name) {
+  renameTarget = { playlist_id: id };
+  document.getElementById('inp-rename').value = name;
+  openModal('modal-rename');
+}
+
+async function confirmRename() {
+  const name = document.getElementById('inp-rename').value.trim();
+  if (!name || !renameTarget) return;
+  try {
+    await api('PUT', `/api/playlists/${renameTarget.playlist_id}`, { name });
+    toast('Playlist renamed!');
+    closeModal('modal-rename');
+    loadPlaylists();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deletePlaylist(id) {
+  if (!confirm('Delete this playlist?')) return;
+  try {
+    await api('DELETE', `/api/playlists/${id}`);
+    toast('Playlist deleted');
+    if (activePl?.playlist_id === id) closeSongsPanel();
+    loadPlaylists();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function removeSongFromPlaylist(plId, songId) {
+  try {
+    await api('DELETE', `/api/playlists/${plId}/songs/${songId}`);
+    toast('Song removed');
+    loadPlaylistSongs(plId, activePl?.name || '');
+    loadPlaylists();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Add song to playlist (from songs browse) ──
+async function openAddSongModalFor({ id, title }) {
+  if (!currentUser) return toast('Select a user first', 'error');
+  pendingSongId = id;
+  document.getElementById('modal-song-label').textContent = `Adding: "${title}"`;
+
+  const pls = await api('GET', `/api/users/${currentUser.user_id}/playlists`);
+  const sel = document.getElementById('modal-pl-select');
+  sel.innerHTML = '<option value="">— choose —</option>'
+    + pls.map(p => `<option value="${p.playlist_id}">${p.name}</option>`).join('');
+  openModal('modal-add-song');
+}
+
+async function openAddSongModal() {
+  // called from inside playlist panel → pick any song (open browse with pre-set)
+  toast('Search for a song in Browse Songs, then click "+ Playlist"', 'success');
+}
+
+async function confirmAddSong() {
+  const plId = document.getElementById('modal-pl-select').value;
+  if (!plId) return toast('Choose a playlist', 'error');
+  try {
+    await api('POST', `/api/playlists/${plId}/songs`, { songId: pendingSongId });
+    toast('Song added to playlist!');
+    closeModal('modal-add-song');
+    if (activePl?.playlist_id == plId) loadPlaylistSongs(plId, activePl.name);
+    loadPlaylists();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ────────────────────────────────────────────────
+//  USERS
+// ────────────────────────────────────────────────
+async function loadUsers() {
+  const users = await api('GET', '/api/users');
+  const grid  = document.getElementById('users-grid');
+  if (!users.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><p>No users yet.</p></div>`;
+    return;
+  }
+  grid.innerHTML = users.map(u => `
+    <div class="user-row">
+      <div class="user-avatar">${u.username.charAt(0).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${esc(u.username)}</div>
+        <div class="user-email">${esc(u.email)}</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:var(--mono)">
+        ID ${u.user_id} · joined ${new Date(u.created_at).toLocaleDateString()}
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.user_id}, '${esc(u.username)}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+async function createUser() {
+  const username = document.getElementById('inp-username').value.trim();
+  const email    = document.getElementById('inp-email').value.trim();
+  const password = document.getElementById('inp-password').value;
+  if (!username || !email || !password) return toast('All fields required', 'error');
+  try {
+    await api('POST', '/api/users', { username, email, password });
+    toast(`User "${username}" created!`);
+    document.getElementById('inp-username').value = '';
+    document.getElementById('inp-email').value    = '';
+    document.getElementById('inp-password').value = '';
+    closeModal('modal-user');
+    loadUsers();
+    loadUserSwitcher();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`Delete user "${name}"? This will also delete their playlists.`)) return;
+  try {
+    await api('DELETE', `/api/users/${id}`);
+    toast(`User "${name}" deleted`);
+    if (currentUser?.user_id == id) {
+      currentUser = null;
+      document.getElementById('user-switcher').value = '';
+    }
+    loadUsers();
+    loadUserSwitcher();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ────────────────────────────────────────────────
+//  INIT
+// ────────────────────────────────────────────────
+(async () => {
+  await Promise.all([loadGenres(), loadUserSwitcher()]);
+  await loadSongs(true);
+})();
+</script>
+</body>
+</html>
