@@ -1,0 +1,20 @@
+# Dependencies
+app/node_modules/
+
+# Environment
+app/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dataset (too large for git)
+data/dataset.csv
+
+# Editor
+.vscode/
+.idea/
